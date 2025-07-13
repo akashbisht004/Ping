@@ -1,16 +1,20 @@
-import express from "express";
-import * as dotenv from "dotenv";
-dotenv.config();
-const PORT=process.env.PORT;
+import { Server, Socket } from "socket.io";
 
-const app=express();
+const io=new Server(8000,{
+    cors: true,
+});
 
-app.get("/get",(req,res)=>{
-    
-})
+const emailToSocketIdMap=new Map();
+const socktIdToEmailMap=new Map();
 
-
-app.listen(PORT,()=>{
-    console.log(`Server is running at port {PORT}`);
-    console.log(`SERVER=> http://localhost:{PORT}`);
+io.on("connection",socket=>{
+    console.log('Socket Connected',socket.id)
+    socket.on('room:join',data=>{
+        const {email,room}=data;
+        emailToSocketIdMap.set(email,socket.id);
+        socktIdToEmailMap.set(socket.id,email);
+        io.to(room).emit('user:joined',{email,id:socket.id})
+        socket.join(room);
+        io.to(socket.id).emit('room:join',data);
+    })
 })
